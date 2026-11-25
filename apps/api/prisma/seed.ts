@@ -1,8 +1,35 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+async function seedAdmin() {
+  const email = (process.env.ADMIN_EMAIL ?? 'admin@parkcontrol.local').toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  // Sin contrasena en el entorno no se crea nada: una clave por defecto en un repo
+  // publico es una puerta abierta.
+  if (!password) {
+    const existing = await prisma.user.count();
+    console.log(
+      existing
+        ? 'Usuarios: ya hay ' + existing + ', no se toca ninguno.'
+        : 'Usuarios: define ADMIN_EMAIL y ADMIN_PASSWORD en apps/api/.env y vuelve a correr la semilla.',
+    );
+    return;
+  }
+  if (password.length < 8) throw new Error('ADMIN_PASSWORD debe tener al menos 8 caracteres');
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await prisma.user.upsert({
+    where: { email },
+    update: { passwordHash, active: true },
+    create: { email, name: process.env.ADMIN_NAME ?? 'Administrador', passwordHash },
+  });
+  console.log('Usuario de acceso listo: ' + email);
+}
+
 async function main() {
+  await seedAdmin();
   const plans = [
     {
       name: 'Ocasional por horas',

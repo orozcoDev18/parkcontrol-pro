@@ -32,6 +32,16 @@ enum MovementStatus {
   CLOSED
 }
 
+/// Quien opera el sistema (porteria o administracion), no el cliente del parqueadero.
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
 model Client {
   id             String   @id @default(uuid())
   documentType   String   @default("CC")

@@ -87,12 +87,17 @@ export class OfflineError extends Error {
   }
 }
 
+export const UNAUTHORIZED_EVENT = 'parkcontrol:unauthorized';
+
+export type SessionUser = { id: string; email: string; name: string };
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(API_URL + path, {
       ...init,
       headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+      credentials: 'include',
       cache: 'no-store',
     });
   } catch {
@@ -100,6 +105,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   const body = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
+    // Sesion vencida a mitad de trabajo: el gate vuelve a pedir el acceso.
+    if (res.status === 401 && typeof window !== 'undefined' && path !== '/auth/me') {
+      window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
+    }
     const payload = body?.message ?? body;
     const message =
       typeof payload === 'string'

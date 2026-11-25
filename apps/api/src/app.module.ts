@@ -1,5 +1,9 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { PrismaService } from './prisma.service';
+import { AuthController } from './auth/auth.controller';
+import { AuthGuard } from './auth/auth.guard';
+import { AuthService } from './auth/auth.service';
 import { ClientsController } from './clients/clients.controller';
 import { ClientsService } from './clients/clients.service';
 import { VehiclesController } from './vehicles/vehicles.controller';
@@ -13,6 +17,7 @@ import { CashRegisterService } from './cash-register/cash-register.service';
 
 @Module({
   controllers: [
+    AuthController,
     ClientsController,
     VehiclesController,
     PlansController,
@@ -20,7 +25,10 @@ import { CashRegisterService } from './cash-register/cash-register.service';
     CashRegisterController,
   ],
   providers: [
+    // Todo exige sesion salvo lo marcado con @Public(): no se olvida ninguna ruta nueva.
+    { provide: APP_GUARD, useClass: AuthGuard },
     PrismaService,
+    AuthService,
     ClientsService,
     VehiclesService,
     PlansService,

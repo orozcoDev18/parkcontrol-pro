@@ -1,0 +1,63 @@
+import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
+import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import { Request, Response } from 'express';
+import { AuthService } from './auth.service';
+import { Public } from './public.decorator';
+import { COOKIE_NAME, SESSION_HOURS, SessionPayload } from './token';
+
+class LoginDto {
+  @IsEmail() email!: string;
+  @IsString() @MinLength(8) @MaxLength(72) password!: string;
+}
+
+class CreateUserDto {
+  @IsEmail() email!: string;
+  @IsString() @MinLength(3) @MaxLength(80) name!: string;
+  @IsString() @MinLength(8) @MaxLength(72) password!: string;
+}
+
+const isProd = process.env.NODE_ENV === 'production';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly auth: AuthService) {}
+
+  @Public()
+  @Post('login')
+  @HttpCode(200)
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const { user, token } = await this.auth.login(dto.email, dto.password);
+    res.cookie(COOKIE_NAME, token, {
+      httpOnly: true,
+      sameSite: isProd ? 'none' : 'lax',
+      // shortcut: en produccion la API y la web deben ir por HTTPS y, si estan en
+      // dominios distintos, hay que fijar `domain`; revisar al desplegar.
+      secure: isProd,
+      maxAge: SESSION_HOURS * 3600 * 1000,
+      path: '/',
+    });
+    return user;
+  }
+
+  @Post('logout')
+  @HttpCode(200)
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie(COOKIE_NAME, { path: '/' });
+    return { ok: true };
+  }
+
+  @Get('me')
+  me(@Req() req: Request & { user: SessionPayload }) {
+    return { id: req.user.sub, email: req.user.email, name: req.user.name };
+  }
+
+  @Post('users')
+  createUser(@Body() dto: CreateUserDto) {
+    return this.auth.createUser(dto);
+  }
+
+  @Get('users')
+  listUsers() {
+    return this.auth.listUsers();
+  }
+}
