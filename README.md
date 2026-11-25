@@ -86,9 +86,12 @@ La web no deja hacer nada sin sesión: todas las rutas de la API exigen la cooki
 `POST /auth/login`, porque el guard es global (`APP_GUARD`) y sólo se abre con `@Public()`, así que
 una ruta nueva nace protegida.
 
-- Pon `JWT_SECRET`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` en `apps/api/.env` y corre `npm run db:seed`:
-  esa es la única forma en que se crea el primer usuario. Sin `ADMIN_PASSWORD` la semilla no crea
-  ninguno, a propósito: este repo es público y una clave por defecto sería una puerta abierta.
+- Pon `JWT_SECRET` y las variables de usuario en `apps/api/.env`, y corre `npm run db:seed`: esa es
+  la única forma en que se crean los primeros usuarios. Cada uno sale de su propio trío —
+  `ADMIN_EMAIL` / `ADMIN_NAME` / `ADMIN_PASSWORD` y `PORTERO_EMAIL` / `PORTERO_NAME` /
+  `PORTERO_PASSWORD`—, y sin la contraseña ese usuario no se crea, a propósito: este repo es público
+  y una clave por defecto sería una puerta abierta. Volver a correr la semilla sobre un correo que
+  ya existe **actualiza su contraseña**, no crea otro usuario.
 - La sesión es una cookie `httpOnly` con un JWT de 12 horas; al vencer, la web vuelve a pedir acceso.
 - Para dar de alta porteros, ya con la sesión abierta:
 

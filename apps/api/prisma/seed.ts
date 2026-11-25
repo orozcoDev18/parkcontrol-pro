@@ -3,33 +3,34 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-async function seedAdmin() {
-  const email = (process.env.ADMIN_EMAIL ?? 'admin@parkcontrol.local').toLowerCase();
-  const password = process.env.ADMIN_PASSWORD;
-  // Sin contrasena en el entorno no se crea nada: una clave por defecto en un repo
-  // publico es una puerta abierta.
+// Cada usuario sale de su propio trio de variables: ADMIN_* y PORTERO_*.
+// Sin contrasena en el entorno no se crea nada: una clave por defecto en un
+// repositorio publico es una puerta abierta.
+async function seedUser(prefijo: 'ADMIN' | 'PORTERO', role: 'ADMIN' | 'PORTERO', porDefecto: string) {
+  const password = process.env[prefijo + '_PASSWORD'];
   if (!password) {
-    const existing = await prisma.user.count();
     console.log(
-      existing
-        ? 'Usuarios: ya hay ' + existing + ', no se toca ninguno.'
-        : 'Usuarios: define ADMIN_EMAIL y ADMIN_PASSWORD en apps/api/.env y vuelve a correr la semilla.',
+      'Usuario ' + role + ': falta ' + prefijo + '_PASSWORD en apps/api/.env, no se crea.',
     );
     return;
   }
-  if (password.length < 8) throw new Error('ADMIN_PASSWORD debe tener al menos 8 caracteres');
+  if (password.length < 8) {
+    throw new Error(prefijo + '_PASSWORD debe tener al menos 8 caracteres');
+  }
 
+  const email = (process.env[prefijo + '_EMAIL'] ?? porDefecto).toLowerCase().trim();
   const passwordHash = await bcrypt.hash(password, 10);
   await prisma.user.upsert({
     where: { email },
-    update: { passwordHash, role: 'ADMIN', active: true },
-    create: { email, name: process.env.ADMIN_NAME ?? 'Administrador', role: 'ADMIN', passwordHash },
+    update: { passwordHash, role, active: true },
+    create: { email, name: process.env[prefijo + '_NAME'] ?? role, role, passwordHash },
   });
-  console.log('Usuario de acceso listo (ADMIN): ' + email);
+  console.log('Usuario listo (' + role + '): ' + email);
 }
 
 async function main() {
-  await seedAdmin();
+  await seedUser('ADMIN', 'ADMIN', 'admin@parkcontrol.com');
+  await seedUser('PORTERO', 'PORTERO', 'porteria@parkcontrol.com');
   const plans = [
     {
       name: 'Ocasional por horas',
