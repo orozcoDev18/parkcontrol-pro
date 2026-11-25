@@ -1,6 +1,9 @@
 -- ParkControl Pro — esquema completo para PostgreSQL / Supabase.
--- Generado desde prisma/schema.prisma; para regenerarlo:
+-- Se puede correr varias veces: lo que ya existe se deja como esta.
+-- Generado desde prisma/schema.prisma con:
 --   npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
+-- (lo que sale de ese comando NO es repetible: hay que volver a envolver los
+--  CREATE TYPE y los ADD CONSTRAINT en bloques DO como los de abajo).
 -- En Supabase: SQL Editor > New query > pegar > Run. Alternativa sin pegar nada: npm run db:push.
 -- El usuario de acceso NO se crea aqui (la contrasena va cifrada): eso lo hace `npm run db:seed`.
 
@@ -8,22 +11,37 @@
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateEnum
-CREATE TYPE "VehicleType" AS ENUM ('CAR', 'MOTORCYCLE', 'OTHER');
+DO $$ BEGIN
+    CREATE TYPE "VehicleType" AS ENUM ('CAR', 'MOTORCYCLE', 'OTHER');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "OverflowPolicy" AS ENUM ('CHARGE_HOURLY', 'BLOCK');
+DO $$ BEGIN
+    CREATE TYPE "OverflowPolicy" AS ENUM ('CHARGE_HOURLY', 'BLOCK');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'CANCELLED');
+DO $$ BEGIN
+    CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'CANCELLED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "MovementStatus" AS ENUM ('INSIDE', 'CLOSED');
+DO $$ BEGIN
+    CREATE TYPE "MovementStatus" AS ENUM ('INSIDE', 'CLOSED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('ADMIN', 'PORTERO');
+DO $$ BEGIN
+    CREATE TYPE "Role" AS ENUM ('ADMIN', 'PORTERO');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE IF NOT EXISTS "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -36,7 +54,7 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
-CREATE TABLE "Client" (
+CREATE TABLE IF NOT EXISTS "Client" (
     "id" TEXT NOT NULL,
     "documentType" TEXT NOT NULL DEFAULT 'CC',
     "documentNumber" TEXT NOT NULL,
@@ -51,7 +69,7 @@ CREATE TABLE "Client" (
 );
 
 -- CreateTable
-CREATE TABLE "Vehicle" (
+CREATE TABLE IF NOT EXISTS "Vehicle" (
     "id" TEXT NOT NULL,
     "plate" TEXT NOT NULL,
     "type" "VehicleType" NOT NULL DEFAULT 'CAR',
@@ -66,7 +84,7 @@ CREATE TABLE "Vehicle" (
 );
 
 -- CreateTable
-CREATE TABLE "VehicleOwnershipHistory" (
+CREATE TABLE IF NOT EXISTS "VehicleOwnershipHistory" (
     "id" TEXT NOT NULL,
     "vehicleId" TEXT NOT NULL,
     "fromClientId" TEXT,
@@ -78,7 +96,7 @@ CREATE TABLE "VehicleOwnershipHistory" (
 );
 
 -- CreateTable
-CREATE TABLE "Plan" (
+CREATE TABLE IF NOT EXISTS "Plan" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "vehicleType" "VehicleType",
@@ -95,7 +113,7 @@ CREATE TABLE "Plan" (
 );
 
 -- CreateTable
-CREATE TABLE "Subscription" (
+CREATE TABLE IF NOT EXISTS "Subscription" (
     "id" TEXT NOT NULL,
     "clientId" TEXT NOT NULL,
     "planId" TEXT NOT NULL,
@@ -108,7 +126,7 @@ CREATE TABLE "Subscription" (
 );
 
 -- CreateTable
-CREATE TABLE "Movement" (
+CREATE TABLE IF NOT EXISTS "Movement" (
     "id" TEXT NOT NULL,
     "vehicleId" TEXT NOT NULL,
     "clientId" TEXT NOT NULL,
@@ -127,67 +145,94 @@ CREATE TABLE "Movement" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Client_documentNumber_key" ON "Client"("documentNumber");
+CREATE UNIQUE INDEX IF NOT EXISTS "Client_documentNumber_key" ON "Client"("documentNumber");
 
 -- CreateIndex
-CREATE INDEX "Client_fullName_idx" ON "Client"("fullName");
+CREATE INDEX IF NOT EXISTS "Client_fullName_idx" ON "Client"("fullName");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Vehicle_plate_key" ON "Vehicle"("plate");
+CREATE UNIQUE INDEX IF NOT EXISTS "Vehicle_plate_key" ON "Vehicle"("plate");
 
 -- CreateIndex
-CREATE INDEX "Vehicle_clientId_idx" ON "Vehicle"("clientId");
+CREATE INDEX IF NOT EXISTS "Vehicle_clientId_idx" ON "Vehicle"("clientId");
 
 -- CreateIndex
-CREATE INDEX "VehicleOwnershipHistory_vehicleId_idx" ON "VehicleOwnershipHistory"("vehicleId");
+CREATE INDEX IF NOT EXISTS "VehicleOwnershipHistory_vehicleId_idx" ON "VehicleOwnershipHistory"("vehicleId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Plan_name_key" ON "Plan"("name");
+CREATE UNIQUE INDEX IF NOT EXISTS "Plan_name_key" ON "Plan"("name");
 
 -- CreateIndex
-CREATE INDEX "Subscription_clientId_status_endsAt_idx" ON "Subscription"("clientId", "status", "endsAt");
+CREATE INDEX IF NOT EXISTS "Subscription_clientId_status_endsAt_idx" ON "Subscription"("clientId", "status", "endsAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Movement_activeVehicle_key" ON "Movement"("activeVehicle");
+CREATE UNIQUE INDEX IF NOT EXISTS "Movement_activeVehicle_key" ON "Movement"("activeVehicle");
 
 -- CreateIndex
-CREATE INDEX "Movement_clientId_status_idx" ON "Movement"("clientId", "status");
+CREATE INDEX IF NOT EXISTS "Movement_clientId_status_idx" ON "Movement"("clientId", "status");
 
 -- CreateIndex
-CREATE INDEX "Movement_entryAt_idx" ON "Movement"("entryAt");
+CREATE INDEX IF NOT EXISTS "Movement_entryAt_idx" ON "Movement"("entryAt");
 
 -- CreateIndex
-CREATE INDEX "Movement_exitAt_idx" ON "Movement"("exitAt");
+CREATE INDEX IF NOT EXISTS "Movement_exitAt_idx" ON "Movement"("exitAt");
 
 -- AddForeignKey
-ALTER TABLE "Vehicle" ADD CONSTRAINT "Vehicle_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "Vehicle" ADD CONSTRAINT "Vehicle_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "VehicleOwnershipHistory" ADD CONSTRAINT "VehicleOwnershipHistory_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "VehicleOwnershipHistory" ADD CONSTRAINT "VehicleOwnershipHistory_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "VehicleOwnershipHistory" ADD CONSTRAINT "VehicleOwnershipHistory_fromClientId_fkey" FOREIGN KEY ("fromClientId") REFERENCES "Client"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "VehicleOwnershipHistory" ADD CONSTRAINT "VehicleOwnershipHistory_fromClientId_fkey" FOREIGN KEY ("fromClientId") REFERENCES "Client"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "VehicleOwnershipHistory" ADD CONSTRAINT "VehicleOwnershipHistory_toClientId_fkey" FOREIGN KEY ("toClientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "VehicleOwnershipHistory" ADD CONSTRAINT "VehicleOwnershipHistory_toClientId_fkey" FOREIGN KEY ("toClientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_planId_fkey" FOREIGN KEY ("planId") REFERENCES "Plan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_planId_fkey" FOREIGN KEY ("planId") REFERENCES "Plan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Movement" ADD CONSTRAINT "Movement_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "Movement" ADD CONSTRAINT "Movement_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Movement" ADD CONSTRAINT "Movement_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "Movement" ADD CONSTRAINT "Movement_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Movement" ADD CONSTRAINT "Movement_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "Movement" ADD CONSTRAINT "Movement_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- Planes de ejemplo (opcional). "Ocasional por horas" es el que fija la tarifa
