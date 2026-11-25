@@ -4,7 +4,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // En Supabase: url es el pooler (6543) y directUrl la conexion directa (5432),
+  // que es la que usan db push y las migraciones. En local las dos son la misma.
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum VehicleType {

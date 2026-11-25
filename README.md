@@ -33,7 +33,7 @@ cp .env.example apps/api/.env
 cp .env.example apps/web/.env.local
 ```
 
-Edita `apps/api/.env` con tu `DATABASE_URL` de PostgreSQL y luego:
+Edita `apps/api/.env` con tu `DATABASE_URL` y `DIRECT_URL` de PostgreSQL y luego:
 
 ```powershell
 npm run db:push
@@ -62,6 +62,18 @@ Autocomprobación del cálculo de cobro:
 ```powershell
 npm run check
 ```
+
+### Con Supabase en vez de PostgreSQL local
+
+1. supabase.com → **New project**, elige región y guarda la contraseña de la base (no se vuelve a mostrar).
+2. En el proyecto, botón **Connect** → **ORMs** → **Prisma**: copia las dos cadenas a `apps/api/.env`
+   (`DATABASE_URL` el pooler de transacciones con `?pgbouncer=true`, `DIRECT_URL` el de sesión en el
+   puerto 5432) y reemplaza `[YOUR-PASSWORD]` por la contraseña del paso 1.
+3. `npm run db:push` y `npm run db:seed` crean las tablas y los datos de ejemplo.
+
+Las tablas quedan en el esquema `public`, visibles en el **Table editor** de Supabase. La API se
+conecta como `postgres`, así que las políticas RLS de Supabase no la afectan; si publicas la base a
+clientes directos, actívalas antes.
 
 ## Endpoints
 
