@@ -206,7 +206,8 @@ export default function ClientesPage() {
 
       <div className="card">
         <h2>Clientes ({clients.length})</h2>
-        <table>
+        <div className="table-wrap">
+<table>
           <thead>
             <tr>
               <th>Nombre</th>
@@ -248,6 +249,7 @@ export default function ClientesPage() {
             )}
           </tbody>
         </table>
+</div>
       </div>
 
       {selected && (
@@ -259,7 +261,8 @@ export default function ClientesPage() {
             </span>
           </h2>
 
-          <table>
+          <div className="table-wrap">
+<table>
             <thead>
               <tr>
                 <th>Placa</th>
@@ -286,6 +289,7 @@ export default function ClientesPage() {
               )}
             </tbody>
           </table>
+</div>
 
           <h2 style={{ marginTop: 20 }}>Agregar vehiculo</h2>
           <form
@@ -381,7 +385,8 @@ export default function ClientesPage() {
           )}
 
           <h2 style={{ marginTop: 20 }}>Planes del cliente</h2>
-          <table>
+          <div className="table-wrap">
+<table>
             <thead>
               <tr>
                 <th>Plan</th>
@@ -416,6 +421,7 @@ export default function ClientesPage() {
               )}
             </tbody>
           </table>
+</div>
           {esAdmin && (
           <form
             className="row"

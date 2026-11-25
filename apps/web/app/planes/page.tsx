@@ -171,7 +171,8 @@ export default function PlanesPage() {
 
       <div className="card">
         <h2>Planes ({plans.length})</h2>
-        <table>
+        <div className="table-wrap">
+<table>
           <thead>
             <tr>
               <th>Plan</th>
@@ -230,6 +231,7 @@ export default function PlanesPage() {
             )}
           </tbody>
         </table>
+</div>
       </div>
     </>
   );

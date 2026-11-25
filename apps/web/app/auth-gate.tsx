@@ -135,7 +135,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="row" style={{ marginLeft: 'auto', alignItems: 'center', gap: 12 }}>
+        <div className="session">
           {state.kind === 'in' ? (
             <>
               <span className="muted">{state.user.name}</span>

@@ -178,6 +178,12 @@ button.ghost {
   background: transparent;
 }
 
+/* La tabla se desplaza dentro de la tarjeta; la pagina nunca se sale a lo ancho. */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -189,6 +195,7 @@ td {
   text-align: left;
   padding: 10px 8px;
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 th {
@@ -225,6 +232,13 @@ th {
   background: #fdf3e7;
   border-color: #f4ddbd;
   color: var(--warning);
+}
+
+.session {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .alert {
@@ -274,4 +288,76 @@ th {
   color: var(--muted);
   padding: 18px 0;
   text-align: center;
+  white-space: normal;
+}
+
+/* ---------- Celulares ---------- */
+@media (max-width: 640px) {
+  body {
+    font-size: 16px;
+  }
+
+  .topbar {
+    padding: 0 16px;
+    gap: 0 16px;
+  }
+
+  .brand {
+    padding: 12px 0 8px;
+  }
+
+  /* Las pestañas se desplazan de lado en vez de apilarse en tres filas. */
+  .nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav a {
+    white-space: nowrap;
+    padding: 8px 10px;
+  }
+
+  .container {
+    padding: 16px 16px 48px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  /* En un dedo no caben dos columnas: cada campo y cada boton ocupan la fila. */
+  .card .field,
+  .card .row > button {
+    flex: 1 1 100%;
+  }
+
+  .session {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+    padding-bottom: 10px;
+  }
+
+  .kpi {
+    font-size: 22px;
+  }
+
+  /* 16px evita que el navegador haga zoom al tocar un campo. */
+  input,
+  select,
+  button {
+    font-size: 16px;
+  }
 }

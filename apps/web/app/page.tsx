@@ -190,7 +190,8 @@ export default function PorteriaPage() {
               <>Sin plan vigente: se cobra tarifa ocasional por horas.</>
             )}
           </p>
-          <table>
+          <div className="table-wrap">
+<table>
             <thead>
               <tr>
                 <th>Placa</th>
@@ -226,6 +227,7 @@ export default function PorteriaPage() {
               ))}
             </tbody>
           </table>
+</div>
         </div>
       ))}
 

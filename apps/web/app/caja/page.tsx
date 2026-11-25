@@ -76,7 +76,8 @@ export default function CajaPage() {
 
       <div className="card">
         <h2>Por metodo de pago</h2>
-        <table>
+        <div className="table-wrap">
+<table>
           <thead>
             <tr>
               <th>Metodo</th>
@@ -101,6 +102,7 @@ export default function CajaPage() {
             )}
           </tbody>
         </table>
+</div>
       </div>
     </>
   );

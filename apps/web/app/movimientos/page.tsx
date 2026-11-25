@@ -51,7 +51,8 @@ export default function MovimientosPage() {
 
       <div className="card">
         <h2>{movements.length} movimiento(s)</h2>
-        <table>
+        <div className="table-wrap">
+<table>
           <thead>
             <tr>
               <th>Placa</th>
@@ -92,6 +93,7 @@ export default function MovimientosPage() {
             )}
           </tbody>
         </table>
+</div>
       </div>
     </>
   );
