@@ -93,6 +93,9 @@ una ruta nueva nace protegida.
   y una clave por defecto sería una puerta abierta. Volver a correr la semilla sobre un correo que
   ya existe **actualiza su contraseña**, no crea otro usuario.
 - La sesión es una cookie `httpOnly` con un JWT de 12 horas; al vencer, la web vuelve a pedir acceso.
+- Para cambiar una contraseña sin tocar el proyecto:
+  [`apps/api/prisma/cambiar-clave.sql`](apps/api/prisma/cambiar-clave.sql), pensado para pegar en el
+  SQL Editor de Supabase. Usa `crypt()` de pgcrypto, que cifra igual que la API.
 - Para dar de alta porteros, ya con la sesión abierta:
 
 ```powershell
