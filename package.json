@@ -1,0 +1,14 @@
+{
+  "name": "parkcontrol-pro",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Control de entrada y salida vehicular con clientes unicos, multiples vehiculos, planes y cupos simultaneos",
+  "workspaces": ["apps/api", "apps/web"],
+  "scripts": {
+    "api": "npm run start:dev --workspace apps/api",
+    "web": "npm run dev --workspace apps/web",
+    "db:push": "npm run db:push --workspace apps/api",
+    "db:seed": "npm run db:seed --workspace apps/api",
+    "check": "npm run check --workspace apps/api"
+  }
+}

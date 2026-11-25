@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VehicleType {
+  CAR
+  MOTORCYCLE
+  OTHER
+}
+
+/// Que hacer cuando el cliente ya gasto todos los cupos simultaneos de su plan.
+enum OverflowPolicy {
+  CHARGE_HOURLY
+  BLOCK
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+}
+
+enum MovementStatus {
+  INSIDE
+  CLOSED
+}
+
+model Client {
+  id             String   @id @default(uuid())
+  documentType   String   @default("CC")
+  /// Normalizado: sin puntos, guiones ni espacios. Un cliente no puede repetirse.
+  documentNumber String   @unique
+  fullName       String
+  phone          String?
+  email          String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  vehicles         Vehicle[]
+  subscriptions    Subscription[]
+  movements        Movement[]
+  ownedFromHistory VehicleOwnershipHistory[] @relation("fromClient")
+  ownedToHistory   VehicleOwnershipHistory[] @relation("toClient")
+
+  @@index([fullName])
+}
+
+model Vehicle {
+  id        String      @id @default(uuid())
+  /// Normalizada: mayusculas, sin espacios ni guiones. Una placa, un solo dueno.
+  plate     String      @unique
+  type      VehicleType @default(CAR)
+  brand     String?
+  model     String?
+  color     String?
+  clientId  String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  client    Client                    @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  movements Movement[]
+  history   VehicleOwnershipHistory[]
+
+  @@index([clientId])
+}
+
+model VehicleOwnershipHistory {
+  id           String   @id @default(uuid())
+  vehicleId    String
+  fromClientId String?
+  toClientId   String
+  reason       String?
+  changedAt    DateTime @default(now())
+
+  vehicle    Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  fromClient Client? @relation("fromClient", fields: [fromClientId], references: [id], onDelete: SetNull)
+  toClient   Client  @relation("toClient", fields: [toClientId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+}
+
+model Plan {
+  id                   String         @id @default(uuid())
+  name                 String         @unique
+  vehicleType          VehicleType?
+  /// Cuantos vehiculos del cliente pueden estar adentro a la vez.
+  maxSimultaneousSpots Int            @default(1)
+  price                Decimal        @default(0) @db.Decimal(12, 2)
+  durationDays         Int            @default(30)
+  /// Tarifa por hora para el excedente y para los ocasionales.
+  hourlyRate           Decimal        @default(0) @db.Decimal(12, 2)
+  overflowPolicy       OverflowPolicy @default(CHARGE_HOURLY)
+  /// El plan que se usa para quien no tiene suscripcion vigente.
+  isOccasional         Boolean        @default(false)
+  active               Boolean        @default(true)
+  createdAt            DateTime       @default(now())
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  clientId  String
+  planId    String
+  startsAt  DateTime           @default(now())
+  endsAt    DateTime
+  status    SubscriptionStatus @default(ACTIVE)
+  createdAt DateTime           @default(now())
+
+  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  plan      Plan       @relation(fields: [planId], references: [id], onDelete: Restrict)
+  movements Movement[]
+
+  @@index([clientId, status, endsAt])
+}
+
+model Movement {
+  id             String         @id @default(uuid())
+  vehicleId      String
+  clientId       String
+  subscriptionId String?
+  entryAt        DateTime       @default(now())
+  exitAt         DateTime?
+  status         MovementStatus @default(INSIDE)
+  /// Minutos entre entrada y salida, se calcula al cerrar.
+  durationMin    Int?
+  coveredByPlan  Boolean        @default(false)
+  amount         Decimal        @default(0) @db.Decimal(12, 2)
+  paymentMethod  String?
+  note           String?
+  /// Igual a vehicleId mientras esta adentro, null al salir: la base impide la doble entrada.
+  activeVehicle  String?        @unique
+
+  vehicle      Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, status])
+  @@index([entryAt])
+  @@index([exitAt])
+}
