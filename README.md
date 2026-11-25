@@ -71,6 +71,11 @@ npm run check
    puerto 5432) y reemplaza `[YOUR-PASSWORD]` por la contraseña del paso 1.
 3. `npm run db:push` y `npm run db:seed` crean las tablas y los datos de ejemplo.
 
+Si prefieres no conectar Prisma a la base, pega
+[`apps/api/prisma/schema.sql`](apps/api/prisma/schema.sql) en el **SQL Editor** de Supabase: trae el
+esquema completo con sus restricciones y los planes de ejemplo. El usuario de acceso no sale de ahí
+(la contraseña va cifrada): sigue siendo `npm run db:seed` con `ADMIN_PASSWORD` en el entorno.
+
 Las tablas quedan en el esquema `public`, visibles en el **Table editor** de Supabase. La API se
 conecta como `postgres`, así que las políticas RLS de Supabase no la afectan; si publicas la base a
 clientes directos, actívalas antes.
