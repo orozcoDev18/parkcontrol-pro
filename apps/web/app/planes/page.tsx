@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DEMO, Plan, VehicleType, api, getOrDemo, money } from '../../lib/api';
+import { useSession } from '../auth-gate';
 
 type Note = { kind: 'ok' | 'error' | 'warn'; text: string } | null;
 
@@ -21,6 +22,7 @@ export default function PlanesPage() {
   const [note, setNote] = useState<Note>(null);
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);
+  const { esAdmin } = useSession();
 
   async function load() {
     const { data, demo: isDemo } = await getOrDemo<Plan[]>('/plans', DEMO.plans);
@@ -75,6 +77,11 @@ export default function PlanesPage() {
       {demo && <div className="alert warn">Modo demo: la API no responde, datos de prueba.</div>}
       {note && <div className={'alert ' + (note.kind === 'ok' ? 'ok' : note.kind)}>{note.text}</div>}
 
+      {!esAdmin && (
+        <div className="alert">Los planes los crea y modifica administracion. Aqui solo se consultan.</div>
+      )}
+
+      {esAdmin && (
       <div className="card">
         <h2>Nuevo plan</h2>
         <form
@@ -160,6 +167,7 @@ export default function PlanesPage() {
           </div>
         </form>
       </div>
+      )}
 
       <div className="card">
         <h2>Planes ({plans.length})</h2>
@@ -205,9 +213,11 @@ export default function PlanesPage() {
                   )}
                 </td>
                 <td style={{ textAlign: 'right' }}>
-                  <button onClick={() => toggle(p)} disabled={busy}>
-                    {p.active ? 'Desactivar' : 'Activar'}
-                  </button>
+                  {esAdmin && (
+                    <button onClick={() => toggle(p)} disabled={busy}>
+                      {p.active ? 'Desactivar' : 'Activar'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

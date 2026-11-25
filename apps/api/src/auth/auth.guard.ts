@@ -1,8 +1,15 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { IS_PUBLIC } from './public.decorator';
-import { COOKIE_NAME, readSession } from './token';
+import { ROLES } from './roles.decorator';
+import { COOKIE_NAME, Role, readSession } from './token';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -19,6 +26,14 @@ export class AuthGuard implements CanActivate {
     const session = readSession(req.cookies?.[COOKIE_NAME]);
     if (!session) throw new UnauthorizedException('Sesion no iniciada o vencida');
     req.user = session;
+
+    const roles = this.reflector.getAllAndOverride<Role[]>(ROLES, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (roles?.length && !roles.includes(session.role)) {
+      throw new ForbiddenException('Esta accion es solo para ' + roles.join(' o '));
+    }
     return true;
   }
 }

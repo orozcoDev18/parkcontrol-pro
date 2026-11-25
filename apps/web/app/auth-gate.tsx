@@ -1,8 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
-import { OfflineError, SessionUser, UNAUTHORIZED_EVENT, api } from '../lib/api';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { OfflineError, ROLE_LABEL, SessionUser, UNAUTHORIZED_EVENT, api } from '../lib/api';
+
+const SessionContext = createContext<SessionUser | null>(null);
+
+const DEMO_SESSION: SessionUser = {
+  id: 'demo',
+  email: 'demo@parkcontrol.local',
+  name: 'Demo',
+  role: 'ADMIN',
+};
+
+/** La sesion abierta, o null en modo demo. `esAdmin` decide que se muestra. */
+export function useSession() {
+  const user = useContext(SessionContext);
+  return { user, esAdmin: user?.role === 'ADMIN' };
+}
 
 const links = [
   { href: '/', label: 'Porteria' },
@@ -124,6 +139,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           {state.kind === 'in' ? (
             <>
               <span className="muted">{state.user.name}</span>
+              <span className="badge">{ROLE_LABEL[state.user.role]}</span>
               <button className="ghost" onClick={logout}>
                 Salir
               </button>
@@ -133,7 +149,12 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </header>
-      <main className="container">{children}</main>
+      <main className="container">
+        {/* En modo demo no hay sesion, pero se enseña la interfaz completa. */}
+        <SessionContext.Provider value={state.kind === 'in' ? state.user : DEMO_SESSION}>
+          {children}
+        </SessionContext.Provider>
+      </main>
     </>
   );
 }

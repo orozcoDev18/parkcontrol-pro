@@ -22,10 +22,10 @@ async function seedAdmin() {
   const passwordHash = await bcrypt.hash(password, 10);
   await prisma.user.upsert({
     where: { email },
-    update: { passwordHash, active: true },
-    create: { email, name: process.env.ADMIN_NAME ?? 'Administrador', passwordHash },
+    update: { passwordHash, role: 'ADMIN', active: true },
+    create: { email, name: process.env.ADMIN_NAME ?? 'Administrador', role: 'ADMIN', passwordHash },
   });
-  console.log('Usuario de acceso listo: ' + email);
+  console.log('Usuario de acceso listo (ADMIN): ' + email);
 }
 
 async function main() {

@@ -89,7 +89,11 @@ export class OfflineError extends Error {
 
 export const UNAUTHORIZED_EVENT = 'parkcontrol:unauthorized';
 
-export type SessionUser = { id: string; email: string; name: string };
+export type Role = 'ADMIN' | 'PORTERO';
+
+export type SessionUser = { id: string; email: string; name: string; role: Role };
+
+export const ROLE_LABEL: Record<Role, string> = { ADMIN: 'Administracion', PORTERO: 'Porteria' };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;

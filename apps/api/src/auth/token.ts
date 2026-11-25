@@ -3,7 +3,9 @@ import jwt from 'jsonwebtoken';
 export const COOKIE_NAME = 'pc_session';
 export const SESSION_HOURS = 12;
 
-export type SessionPayload = { sub: string; email: string; name: string };
+export type Role = 'ADMIN' | 'PORTERO';
+
+export type SessionPayload = { sub: string; email: string; name: string; role: Role };
 
 function secret(): string {
   const value = process.env.JWT_SECRET;

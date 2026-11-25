@@ -1,6 +1,7 @@
 // Autocomprobacion del acceso: levanta la API con un Prisma falso y verifica que
 // sin sesion no se pueda hacer nada. `npm run check`.
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import bcrypt from 'bcryptjs';
@@ -14,18 +15,26 @@ process.env.JWT_SECRET = 'secreto-de-prueba-suficientemente-largo';
 const PASSWORD = 'clave-de-prueba';
 
 async function main() {
+  const passwordHash = await bcrypt.hash(PASSWORD, 10);
   const user = {
     id: 'u1',
     email: 'portero@parkcontrol.local',
     name: 'Portero',
-    passwordHash: await bcrypt.hash(PASSWORD, 10),
+    role: 'PORTERO',
+    passwordHash,
     active: true,
   };
+  const admin = { ...user, id: 'u2', email: 'admin@parkcontrol.local', name: 'Admin', role: 'ADMIN' };
+  const usuarios = [user, admin];
 
   const prismaFake = {
     $connect: async () => {},
-    user: { findUnique: async ({ where }: any) => (where.email === user.email ? user : null) },
+    user: { findUnique: async ({ where }: any) => usuarios.find((u) => u.email === where.email) ?? null },
     client: { findMany: async () => [] },
+    plan: {
+      findMany: async () => [],
+      create: async ({ data }: any) => ({ id: 'p1', ...data }),
+    },
   };
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -68,6 +77,38 @@ async function main() {
     .get('/clients')
     .set('Cookie', cookie.replace(/^pc_session=.{6}/, 'pc_session=aaaaaa'))
     .expect(401);
+
+  // El portero opera la porteria pero no administra.
+  assert.equal(me.body.role, 'PORTERO');
+  await request(http).get('/plans').set('Cookie', cookie).expect(200);
+  const nuevoPlan = {
+    name: 'Plan de prueba',
+    maxSimultaneousSpots: 1,
+    price: 1000,
+    durationDays: 30,
+    hourlyRate: 500,
+  };
+  await request(http).post('/plans').set('Cookie', cookie).send(nuevoPlan).expect(403);
+  await request(http)
+    .post('/subscriptions')
+    .set('Cookie', cookie)
+    .send({ clientId: crypto.randomUUID(), planId: crypto.randomUUID() })
+    .expect(403);
+  await request(http)
+    .post('/vehicles/' + crypto.randomUUID() + '/transfer')
+    .set('Cookie', cookie)
+    .send({ toClientId: crypto.randomUUID() })
+    .expect(403);
+  await request(http).get('/auth/users').set('Cookie', cookie).expect(403);
+
+  // La administracion si puede.
+  const loginAdmin = await request(http)
+    .post('/auth/login')
+    .send({ email: admin.email, password: PASSWORD })
+    .expect(200);
+  assert.equal(loginAdmin.body.role, 'ADMIN');
+  const cookieAdmin = loginAdmin.headers['set-cookie'][0];
+  await request(http).post('/plans').set('Cookie', cookieAdmin).send(nuevoPlan).expect(201);
 
   await app.close();
   console.log('acceso OK');

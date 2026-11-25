@@ -1,9 +1,10 @@
 import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { Public } from './public.decorator';
-import { COOKIE_NAME, SESSION_HOURS, SessionPayload } from './token';
+import { Roles } from './roles.decorator';
+import { COOKIE_NAME, Role, SESSION_HOURS, SessionPayload } from './token';
 
 class LoginDto {
   @IsEmail() email!: string;
@@ -14,6 +15,7 @@ class CreateUserDto {
   @IsEmail() email!: string;
   @IsString() @MinLength(3) @MaxLength(80) name!: string;
   @IsString() @MinLength(8) @MaxLength(72) password!: string;
+  @IsOptional() @IsIn(['ADMIN', 'PORTERO']) role?: Role;
 }
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -48,14 +50,17 @@ export class AuthController {
 
   @Get('me')
   me(@Req() req: Request & { user: SessionPayload }) {
-    return { id: req.user.sub, email: req.user.email, name: req.user.name };
+    const { sub, email, name, role } = req.user;
+    return { id: sub, email, name, role };
   }
 
+  @Roles('ADMIN')
   @Post('users')
   createUser(@Body() dto: CreateUserDto) {
     return this.auth.createUser(dto);
   }
 
+  @Roles('ADMIN')
   @Get('users')
   listUsers() {
     return this.auth.listUsers();

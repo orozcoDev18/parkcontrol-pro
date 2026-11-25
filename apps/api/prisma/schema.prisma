@@ -32,12 +32,20 @@ enum MovementStatus {
   CLOSED
 }
 
+/// ADMIN hace todo; PORTERO opera la porteria pero no toca planes ni usuarios.
+enum Role {
+  ADMIN
+  PORTERO
+}
+
 /// Quien opera el sistema (porteria o administracion), no el cliente del parqueadero.
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
   name         String
   passwordHash String
+  /// El rol mas limitado por defecto: un usuario nuevo nunca nace con todo el poder.
+  role         Role     @default(PORTERO)
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 }

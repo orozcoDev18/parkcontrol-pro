@@ -13,6 +13,7 @@ import {
   getOrDemo,
   money,
 } from '../../lib/api';
+import { useSession } from '../auth-gate';
 
 type Note = { kind: 'ok' | 'error' | 'warn'; text: string } | null;
 
@@ -31,6 +32,7 @@ export default function ClientesPage() {
   const [planId, setPlanId] = useState('');
   const [transfer, setTransfer] = useState({ vehicleId: '', document: '', reason: '' });
   const [busy, setBusy] = useState(false);
+  const { esAdmin } = useSession();
 
   async function load(term = search) {
     const path = '/clients' + (term.trim() ? '?search=' + encodeURIComponent(term.trim()) : '');
@@ -331,6 +333,8 @@ export default function ClientesPage() {
             </button>
           </form>
 
+          {esAdmin && (
+          <>
           <h2 style={{ marginTop: 20 }}>Transferir propietario</h2>
           <form
             className="row"
@@ -373,6 +377,8 @@ export default function ClientesPage() {
               Transferir
             </button>
           </form>
+          </>
+          )}
 
           <h2 style={{ marginTop: 20 }}>Planes del cliente</h2>
           <table>
@@ -410,6 +416,7 @@ export default function ClientesPage() {
               )}
             </tbody>
           </table>
+          {esAdmin && (
           <form
             className="row"
             style={{ marginTop: 12 }}
@@ -432,6 +439,7 @@ export default function ClientesPage() {
               Asignar
             </button>
           </form>
+          )}
         </div>
       )}
     </>

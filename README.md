@@ -91,8 +91,25 @@ una ruta nueva nace protegida.
 curl.exe -X POST http://localhost:3001/auth/users -H "Content-Type: application/json" -b cookies.txt --data-raw '{\"email\":\"portero@tuparqueadero.com\",\"name\":\"Portero\",\"password\":\"una-clave-larga\"}'
 ```
 
-No hay roles: todo el que entra puede hacer todo. Si necesitas separar portería de administración,
-es el siguiente paso.
+### Roles
+
+| | `PORTERO` | `ADMIN` |
+| --- | --- | --- |
+| Portería: buscar, entrada, salida | sí | sí |
+| Clientes y vehículos: ver, registrar, agregar vehículo | sí | sí |
+| Movimientos y caja | sí | sí |
+| Planes: ver | sí | sí |
+| Planes: crear, modificar, activar | **no** | sí |
+| Vender o cancelar una suscripción | **no** | sí |
+| Transferir el propietario de un vehículo | **no** | sí |
+| Ver y crear usuarios | **no** | sí |
+
+Lo decide el guard por la ruta (`@Roles('ADMIN')`), no la pantalla: la web esconde lo que el portero
+no puede hacer, pero aunque alguien llame la API a mano recibe un `403`. Quien no lleva decorador
+vale para cualquier sesión, y un usuario nuevo nace `PORTERO` salvo que se le pida otro rol.
+
+El usuario de la semilla es `ADMIN`; para crear un portero, `"role": "PORTERO"` (o nada) en el
+cuerpo de `POST /auth/users`.
 
 ## Endpoints
 
