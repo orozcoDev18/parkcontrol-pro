@@ -172,7 +172,7 @@ export default function PlanesPage() {
       <div className="card">
         <h2>Planes ({plans.length})</h2>
         <div className="table-wrap">
-<table>
+<table className="cards-sm">
           <thead>
             <tr>
               <th>Plan</th>
@@ -189,10 +189,10 @@ export default function PlanesPage() {
           <tbody>
             {plans.map((p) => (
               <tr key={p.id}>
-                <td>
+                <td data-label="Plan">
                   {p.name} {p.isOccasional && <span className="badge">ocasional</span>}
                 </td>
-                <td>
+                <td data-label="Vehiculo">
                   {p.vehicleType === 'CAR'
                     ? 'Carro'
                     : p.vehicleType === 'MOTORCYCLE'
@@ -201,12 +201,14 @@ export default function PlanesPage() {
                         ? 'Otro'
                         : 'Cualquiera'}
                 </td>
-                <td>{p.maxSimultaneousSpots}</td>
-                <td>{money(p.price)}</td>
-                <td>{p.durationDays}</td>
-                <td>{money(p.hourlyRate)}</td>
-                <td>{p.overflowPolicy === 'BLOCK' ? 'Bloquea' : 'Cobra por horas'}</td>
-                <td>
+                <td data-label="Cupos">{p.maxSimultaneousSpots}</td>
+                <td data-label="Precio">{money(p.price)}</td>
+                <td data-label="Dias">{p.durationDays}</td>
+                <td data-label="Hora">{money(p.hourlyRate)}</td>
+                <td data-label="Sin cupo">
+                  {p.overflowPolicy === 'BLOCK' ? 'Bloquea' : 'Cobra por horas'}
+                </td>
+                <td data-label="Estado">
                   {p.active ? (
                     <span className="badge ok">Activo</span>
                   ) : (

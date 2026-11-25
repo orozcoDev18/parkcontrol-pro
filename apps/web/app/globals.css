@@ -360,4 +360,62 @@ th {
   button {
     font-size: 16px;
   }
+
+  /* Las tablas anchas se leen mejor como una tarjeta por fila que arrastrando
+     de lado. Cada celda muestra su titulo con el data-label del <td>. */
+  .cards-sm thead {
+    display: none;
+  }
+
+  .cards-sm,
+  .cards-sm tbody,
+  .cards-sm tr,
+  .cards-sm td {
+    display: block;
+    width: 100%;
+  }
+
+  .cards-sm tr {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .cards-sm td {
+    border: 0;
+    padding: 5px 0;
+    white-space: normal;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .cards-sm td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex: 0 0 auto;
+  }
+
+  /* Celda sin dato o solo con un boton: sin etiqueta delante. */
+  .cards-sm td:empty {
+    display: none;
+  }
+
+  .cards-sm td:not([data-label])::before,
+  .cards-sm td.empty::before {
+    content: none;
+  }
+
+  .cards-sm td:not([data-label]) {
+    justify-content: stretch;
+  }
+
+  .cards-sm td:not([data-label]) button {
+    width: 100%;
+  }
 }

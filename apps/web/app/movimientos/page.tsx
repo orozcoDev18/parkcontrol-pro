@@ -52,7 +52,7 @@ export default function MovimientosPage() {
       <div className="card">
         <h2>{movements.length} movimiento(s)</h2>
         <div className="table-wrap">
-<table>
+<table className="cards-sm">
           <thead>
             <tr>
               <th>Placa</th>
@@ -68,14 +68,18 @@ export default function MovimientosPage() {
           <tbody>
             {movements.map((m) => (
               <tr key={m.id}>
-                <td className="mono">{m.vehicle.plate}</td>
-                <td>{m.client.fullName}</td>
-                <td>{dateTime(m.entryAt)}</td>
-                <td>{dateTime(m.exitAt)}</td>
-                <td>{duration(m.durationMin)}</td>
-                <td>{m.coveredByPlan ? <span className="badge ok">Plan</span> : money(m.amount)}</td>
-                <td>{m.paymentMethod ?? '—'}</td>
-                <td>
+                <td className="mono" data-label="Placa">
+                  {m.vehicle.plate}
+                </td>
+                <td data-label="Conductor">{m.client.fullName}</td>
+                <td data-label="Entrada">{dateTime(m.entryAt)}</td>
+                <td data-label="Salida">{dateTime(m.exitAt)}</td>
+                <td data-label="Tiempo">{duration(m.durationMin)}</td>
+                <td data-label="Cobro">
+                  {m.coveredByPlan ? <span className="badge ok">Plan</span> : money(m.amount)}
+                </td>
+                <td data-label="Pago">{m.paymentMethod ?? '—'}</td>
+                <td data-label="Estado">
                   {m.status === 'INSIDE' ? (
                     <span className="badge inside">Adentro</span>
                   ) : (

@@ -207,7 +207,7 @@ export default function ClientesPage() {
       <div className="card">
         <h2>Clientes ({clients.length})</h2>
         <div className="table-wrap">
-<table>
+<table className="cards-sm">
           <thead>
             <tr>
               <th>Nombre</th>
@@ -224,10 +224,14 @@ export default function ClientesPage() {
               );
               return (
                 <tr key={c.id}>
-                  <td>{c.fullName}</td>
-                  <td className="mono">{c.documentNumber}</td>
-                  <td>{(c.vehicles ?? []).map((v) => v.plate).join(', ') || '—'}</td>
-                  <td>
+                  <td data-label="Nombre">{c.fullName}</td>
+                  <td className="mono" data-label="Documento">
+                    {c.documentNumber}
+                  </td>
+                  <td data-label="Vehiculos">
+                    {(c.vehicles ?? []).map((v) => v.plate).join(', ') || '—'}
+                  </td>
+                  <td data-label="Plan">
                     {active ? (
                       <span className="badge ok">{active.plan.name}</span>
                     ) : (
