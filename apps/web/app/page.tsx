@@ -1,237 +1,192 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  ApiError,
-  DEMO,
-  LookupResult,
-  Movement,
-  OfflineError,
+  DEMO_OVERVIEW,
+  Overview,
   VEHICLE_LABEL,
-  api,
   dateTime,
   duration,
   getOrDemo,
   money,
 } from '../lib/api';
 
-type Note = { kind: 'ok' | 'error' | 'warn'; text: string } | null;
+const DIAS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
 
-export default function PorteriaPage() {
-  const [q, setQ] = useState('');
-  const [results, setResults] = useState<LookupResult[]>([]);
-  const [searched, setSearched] = useState(false);
+function etiquetaDia(fecha: string) {
+  const d = new Date(fecha + 'T12:00:00');
+  return DIAS[d.getDay()] + ' ' + d.getDate();
+}
+
+function desde(iso: string) {
+  return duration(Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+}
+
+export default function TableroPage() {
+  const [data, setData] = useState<Overview | null>(null);
   const [demo, setDemo] = useState(false);
-  const [note, setNote] = useState<Note>(null);
-  const [payment, setPayment] = useState('EFECTIVO');
-  const [confirm, setConfirm] = useState<{ plate: string; text: string } | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function search(term = q) {
-    const value = term.trim();
-    if (value.length < 2) {
-      setNote({ kind: 'warn', text: 'Escribe al menos 2 caracteres.' });
-      return;
-    }
-    setBusy(true);
+  const load = useCallback(async () => {
     try {
-      const demoResults: LookupResult[] = DEMO.clients
-        .filter(
-          (c) =>
-            c.fullName.toLowerCase().includes(value.toLowerCase()) ||
-            c.documentNumber.includes(value) ||
-            (c.vehicles ?? []).some((v) => v.plate.includes(value.toUpperCase())),
-        )
-        .map((c) => ({
-          client: c,
-          subscription: c.subscriptions?.[0] ?? null,
-          spotsUsed: 0,
-          maxSpots: c.subscriptions?.[0]?.plan.maxSimultaneousSpots ?? 0,
-          vehicles: c.vehicles ?? [],
-        }));
-      const { data, demo: isDemo } = await getOrDemo<{ results: LookupResult[] }>(
-        '/gate/lookup?q=' + encodeURIComponent(value),
-        { results: demoResults },
-      );
-      setResults(data.results);
-      setDemo(isDemo);
-      setSearched(true);
-      if (!data.results.length) setNote({ kind: 'warn', text: 'Sin resultados para "' + value + '".' });
-      else setNote(null);
-    } catch (error) {
-      setNote({ kind: 'error', text: (error as Error).message });
-    } finally {
-      setBusy(false);
+      const { data, demo } = await getOrDemo<Overview>('/reports/overview?days=7', DEMO_OVERVIEW);
+      setData(data);
+      setDemo(demo);
+      setError(null);
+    } catch (e) {
+      setError((e as Error).message);
     }
+  }, []);
+
+  useEffect(() => {
+    load();
+    // La porteria cambia sola mientras el tablero esta abierto.
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  if (!data) {
+    return (
+      <div className="skeleton-grid">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="skeleton" />
+        ))}
+      </div>
+    );
   }
 
-  async function checkIn(plate: string, force = false) {
-    setBusy(true);
-    setConfirm(null);
-    try {
-      const res = await api.post<{ movement: Movement; coveredByPlan: boolean; warning: string | null }>(
-        '/gate/check-in',
-        { plate, force },
-      );
-      setNote({
-        kind: res.warning ? 'warn' : 'ok',
-        text:
-          'Entrada registrada: ' +
-          res.movement.vehicle.plate +
-          ' a las ' +
-          dateTime(res.movement.entryAt) +
-          (res.coveredByPlan ? ' (cubierto por el plan)' : ' (se cobra por horas)') +
-          (res.warning ? ' — ' + res.warning : ''),
-      });
-      await search();
-    } catch (error) {
-      if (error instanceof ApiError && error.payload?.code === 'PLAN_SPOTS_FULL_CONFIRM') {
-        setConfirm({ plate, text: error.message });
-      } else if (error instanceof OfflineError) {
-        setNote({ kind: 'error', text: error.message });
-      } else {
-        setNote({ kind: 'error', text: (error as Error).message });
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function checkOut(plate: string) {
-    setBusy(true);
-    try {
-      const m = await api.post<Movement>('/gate/check-out', { plate, paymentMethod: payment });
-      setNote({
-        kind: 'ok',
-        text:
-          'Salida registrada: ' +
-          m.vehicle.plate +
-          ' · ' +
-          duration(m.durationMin) +
-          ' · ' +
-          money(m.amount) +
-          ' · ' +
-          (m.paymentMethod ?? ''),
-      });
-      await search();
-    } catch (error) {
-      setNote({ kind: 'error', text: (error as Error).message });
-    } finally {
-      setBusy(false);
-    }
-  }
+  const tope = Math.max(...data.serie.map((p) => p.total), 1);
+  const semana = data.serie.reduce((s, p) => s + p.total, 0);
 
   return (
     <>
-      <h1>Porteria</h1>
-      <p className="subtitle">Busca por placa, documento o nombre del conductor.</p>
-
-      {demo && (
-        <div className="alert warn">
-          Modo demo: la API no responde, se muestran datos de prueba. Los registros no se guardan.
-        </div>
-      )}
-      {note && <div className={'alert ' + (note.kind === 'ok' ? 'ok' : note.kind)}>{note.text}</div>}
-      {confirm && (
-        <div className="alert warn">
-          <div>{confirm.text}</div>
-          <div className="row" style={{ marginTop: 10 }}>
-            <button className="primary" onClick={() => checkIn(confirm.plate, true)} disabled={busy}>
-              Ingresar y cobrar por horas
-            </button>
-            <button className="ghost" onClick={() => setConfirm(null)}>
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="card">
-        <form
-          className="row"
-          onSubmit={(e) => {
-            e.preventDefault();
-            search();
-          }}
-        >
-          <div className="field" style={{ flex: '2 1 280px' }}>
-            <label>Placa, documento o nombre</label>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ABC123" autoFocus />
-          </div>
-          <div className="field">
-            <label>Metodo de pago (salida)</label>
-            <select value={payment} onChange={(e) => setPayment(e.target.value)}>
-              <option value="EFECTIVO">Efectivo</option>
-              <option value="TARJETA">Tarjeta</option>
-              <option value="TRANSFERENCIA">Transferencia</option>
-            </select>
-          </div>
-          <button className="primary" type="submit" disabled={busy}>
-            Buscar
-          </button>
-        </form>
-      </div>
-
-      {results.map((r) => (
-        <div className="card" key={r.client.id}>
-          <h2>
-            {r.client.fullName}{' '}
-            <span className="muted">
-              · {r.client.documentType} {r.client.documentNumber}
-            </span>
-          </h2>
-          <p className="muted" style={{ marginTop: 0 }}>
-            {r.subscription ? (
-              <>
-                Plan <strong>{r.subscription.plan.name}</strong> vigente hasta{' '}
-                {dateTime(r.subscription.endsAt)} · cupos {r.spotsUsed}/{r.maxSpots}
-              </>
-            ) : (
-              <>Sin plan vigente: se cobra tarifa ocasional por horas.</>
-            )}
+      <header className="page-head">
+        <div>
+          <h1>Tablero</h1>
+          <p className="subtitle">
+            Al dia de hoy, {new Date(data.ahora).toLocaleDateString('es-CO', { dateStyle: 'full' })}
           </p>
-          <div className="table-wrap">
-<table>
-            <thead>
-              <tr>
-                <th>Placa</th>
-                <th>Tipo</th>
-                <th>Estado</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {r.vehicles.map((v) => (
-                <tr key={v.id}>
-                  <td className="mono">{v.plate}</td>
-                  <td>{VEHICLE_LABEL[v.type]}</td>
-                  <td>
-                    {v.inside ? (
-                      <span className="badge inside">Adentro</span>
-                    ) : (
-                      <span className="badge">Afuera</span>
-                    )}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {v.inside ? (
-                      <button onClick={() => checkOut(v.plate)} disabled={busy}>
-                        Salida
-                      </button>
-                    ) : (
-                      <button className="primary" onClick={() => checkIn(v.plate)} disabled={busy}>
-                        Entrada
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-</div>
         </div>
-      ))}
+        <Link className="btn-primary" href="/porteria">
+          Ir a porteria
+        </Link>
+      </header>
 
-      {searched && !results.length && <div className="card empty">Sin resultados.</div>}
+      {demo && <div className="alert warn">Modo demo: la API no responde, datos de prueba.</div>}
+      {error && <div className="alert error">{error}</div>}
+
+      <section className="kpis">
+        <article className="kpi-card acento">
+          <span className="kpi-label">Adentro ahora</span>
+          <strong className="kpi-value">{data.adentro.total}</strong>
+          <span className="kpi-foot">{data.adentro.conPlan} con plan vigente</span>
+        </article>
+        <article className="kpi-card">
+          <span className="kpi-label">Recaudo de hoy</span>
+          <strong className="kpi-value">{money(data.hoy.total)}</strong>
+          <span className="kpi-foot">
+            {money(data.hoy.parqueo)} por horas · {money(data.hoy.planes)} en planes
+          </span>
+        </article>
+        <article className="kpi-card">
+          <span className="kpi-label">Salidas de hoy</span>
+          <strong className="kpi-value">{data.hoy.salidas}</strong>
+          <span className="kpi-foot">{money(semana)} en los ultimos 7 dias</span>
+        </article>
+        <article className="kpi-card">
+          <span className="kpi-label">Planes vigentes</span>
+          <strong className="kpi-value">{data.totales.planesVigentes}</strong>
+          <span className="kpi-foot">
+            {data.totales.clientes} clientes · {data.totales.vehiculos} vehiculos
+          </span>
+        </article>
+      </section>
+
+      <section className="card chart-card">
+        <div className="card-head">
+          <h2>Recaudo de los ultimos 7 dias</h2>
+          <span className="muted">{money(semana)} en total</span>
+        </div>
+        <div className="chart">
+          {data.serie.map((p) => (
+            <div className="chart-col" key={p.fecha} title={etiquetaDia(p.fecha)}>
+              <span className="chart-amount">{p.total ? money(p.total) : ''}</span>
+              <div className="chart-track">
+                <div
+                  className="chart-bar"
+                  style={{ height: Math.max(3, Math.round((p.total / tope) * 100)) + '%' }}
+                />
+              </div>
+              <span className="chart-day">{etiquetaDia(p.fecha)}</span>
+              <span className="chart-exits">{p.salidas} sal.</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="split">
+        <section className="card">
+          <div className="card-head">
+            <h2>Adentro ahora</h2>
+            <Link className="link" href="/movimientos">
+              Ver movimientos
+            </Link>
+          </div>
+          {data.adentro.vehiculos.length ? (
+            <ul className="lista">
+              {data.adentro.vehiculos.map((v) => (
+                <li key={v.id}>
+                  <span className="mono placa">{v.plate}</span>
+                  <span className="lista-texto">
+                    <strong>{v.cliente}</strong>
+                    {VEHICLE_LABEL[v.type]} · lleva {desde(v.entryAt)}
+                  </span>
+                  <span className={'badge ' + (v.coveredByPlan ? 'ok' : '')}>
+                    {v.coveredByPlan ? 'Plan' : 'Por horas'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="empty">No hay vehiculos adentro.</p>
+          )}
+        </section>
+
+        <section className="card">
+          <div className="card-head">
+            <h2>Ultimos movimientos</h2>
+            <Link className="link" href="/caja">
+              Ver caja
+            </Link>
+          </div>
+          {data.ultimos.length ? (
+            <ul className="lista">
+              {data.ultimos.map((m) => (
+                <li key={m.id}>
+                  <span className="mono placa">{m.vehicle.plate}</span>
+                  <span className="lista-texto">
+                    <strong>{m.client.fullName}</strong>
+                    {m.status === 'INSIDE' ? 'Entro ' : 'Salio '}
+                    {dateTime(m.status === 'INSIDE' ? m.entryAt : m.exitAt)}
+                  </span>
+                  <span className="lista-valor">
+                    {m.status === 'INSIDE' ? (
+                      <span className="badge inside">Adentro</span>
+                    ) : m.coveredByPlan ? (
+                      <span className="badge ok">Plan</span>
+                    ) : (
+                      money(m.amount)
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="empty">Todavia no hay movimientos.</p>
+          )}
+        </section>
+      </div>
     </>
   );
 }

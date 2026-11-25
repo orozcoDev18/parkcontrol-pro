@@ -14,6 +14,7 @@ import { GateController } from './gate/gate.controller';
 import { GateService } from './gate/gate.service';
 import { CashRegisterController } from './cash-register/cash-register.controller';
 import { CashRegisterService } from './cash-register/cash-register.service';
+import { ReportsService } from './cash-register/reports.service';
 
 @Module({
   controllers: [
@@ -34,6 +35,7 @@ import { CashRegisterService } from './cash-register/cash-register.service';
     PlansService,
     GateService,
     CashRegisterService,
+    ReportsService,
   ],
 })
 export class AppModule {}

@@ -34,7 +34,8 @@ a {
 }
 
 .topbar {
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
   padding: 0 20px;
   display: flex;
@@ -48,9 +49,18 @@ a {
 
 .brand {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text);
   padding: 16px 0;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
+}
+
+.brand span {
+  color: var(--accent);
+}
+
+.nav a.activo {
+  background: #e7f6ee;
+  color: var(--accent-strong);
 }
 
 .nav {
@@ -93,11 +103,275 @@ h1 {
   border-radius: var(--radius);
   padding: 18px;
   margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(17, 38, 31, 0.04);
 }
 
 .card h2 {
   font-size: 16px;
   margin: 0 0 12px;
+}
+
+/* ---------- Tablero ---------- */
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.page-head .subtitle {
+  margin: 4px 0 0;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 8px 20px -12px var(--accent);
+  transition:
+    background 0.18s,
+    transform 0.15s;
+}
+
+.btn-primary:hover {
+  background: var(--accent-strong);
+  transform: translateY(-1px);
+}
+
+.link {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.card-head h2 {
+  margin: 0;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.kpi-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(17, 38, 31, 0.04);
+  overflow: hidden;
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -22px rgba(17, 38, 31, 0.5);
+}
+
+/* El dato que mas se mira lleva el acento. */
+.kpi-card.acento::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(var(--accent), var(--accent-strong));
+}
+
+.kpi-label {
+  color: var(--muted);
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.kpi-value {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.kpi-foot {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  min-height: 190px;
+}
+
+.chart-col {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.chart-amount {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.chart-track {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 8px;
+  background: linear-gradient(var(--bg), #eef5f1);
+}
+
+.chart-bar {
+  width: 100%;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #34d399, var(--accent));
+  animation: crecer 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  transition: filter 0.15s;
+}
+
+.chart-col:hover .chart-bar {
+  filter: brightness(1.08);
+}
+
+.chart-day {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.chart-exits {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+@keyframes crecer {
+  from {
+    height: 0 !important;
+  }
+}
+
+.split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lista li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.lista li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.placa {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 13px;
+}
+
+.lista-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.lista-texto strong {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lista-valor {
+  margin-left: auto;
+  font-weight: 600;
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+
+.lista li .badge {
+  margin-left: auto;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.skeleton {
+  height: 104px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, #eef4f1, #f7fbf9, #eef4f1);
+  background-size: 200% 100%;
+  animation: cargando 1.4s linear infinite;
+}
+
+@keyframes cargando {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* La barra inferior solo existe en el celular. */
+.barra-inferior {
+  display: none;
 }
 
 .grid {
@@ -817,6 +1091,102 @@ th {
   select,
   button {
     font-size: 16px;
+  }
+
+  /* Arriba solo la marca y la sesion; navegar se hace abajo, con el pulgar. */
+  .nav {
+    display: none;
+  }
+
+  .barra-inferior {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .barra-inferior a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 9px 2px 8px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .barra-inferior a.activo {
+    color: var(--accent);
+  }
+
+  .barra-icono {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 26px;
+    border-radius: 999px;
+    transition: background 0.18s;
+  }
+
+  .barra-inferior a.activo .barra-icono {
+    background: #e7f6ee;
+  }
+
+  .barra-icono svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  /* Hueco para que la barra no tape el final de la pagina. */
+  .container {
+    padding-bottom: 86px;
+  }
+
+  .page-head {
+    align-items: stretch;
+  }
+
+  .page-head .btn-primary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .kpi-value {
+    font-size: 26px;
+  }
+
+  .chart {
+    gap: 6px;
+    min-height: 170px;
+  }
+
+  .chart-amount {
+    display: none;
+  }
+
+  .chart-track {
+    height: 110px;
+  }
+
+  .chart-day,
+  .chart-exits {
+    font-size: 10.5px;
+    white-space: nowrap;
+  }
+
+  .card-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
   }
 
   /* Las tablas anchas se leen mejor como una tarjeta por fila que arrastrando

@@ -1,7 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "//": "Proyecto de la API. La web es otro proyecto, con raiz apps/web.",
-  "//framework": "null a proposito: hay un Next.js en el repo y Vercel lo detecta aqui tambien, y luego busca su manifiesto en una carpeta que no existe.",
   "framework": null,
   "buildCommand": "npm run db:generate --workspace apps/api && npm run build --workspace apps/api",
   "installCommand": "npm install",

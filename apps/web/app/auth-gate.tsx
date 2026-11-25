@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { OfflineError, ROLE_LABEL, SessionUser, UNAUTHORIZED_EVENT, api } from '../lib/api';
+import { ROLE_LABEL, SessionUser, UNAUTHORIZED_EVENT, api, apiCaida } from '../lib/api';
 
 const SessionContext = createContext<SessionUser | null>(null);
 
@@ -54,12 +55,61 @@ export function useSession() {
   return { user, esAdmin: user?.role === 'ADMIN' };
 }
 
+const svg = (d: React.ReactNode) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+    {d}
+  </svg>
+);
+
+const iconoTablero = svg(
+  <>
+    <rect x="3.5" y="3.5" width="7" height="8.5" rx="1.5" />
+    <rect x="13.5" y="3.5" width="7" height="5" rx="1.5" />
+    <rect x="3.5" y="15" width="7" height="5.5" rx="1.5" />
+    <rect x="13.5" y="11.5" width="7" height="9" rx="1.5" />
+  </>,
+);
+const iconoPorteria = svg(
+  <>
+    <path d="M4 13l1.4-4.3A2 2 0 017.3 7h9.4a2 2 0 011.9 1.7L20 13v5.5h-2.5v-2h-11v2H4V13z" />
+    <path d="M6.5 16h11" strokeDasharray="1 3" />
+  </>,
+);
+const iconoClientes = svg(
+  <>
+    <circle cx="12" cy="8" r="3.2" />
+    <path d="M5 19.5c0-3.4 3.1-5.6 7-5.6s7 2.2 7 5.6" />
+  </>,
+);
+const iconoPlanes = svg(
+  <>
+    <path d="M4 8.5A1.5 1.5 0 015.5 7h13A1.5 1.5 0 0120 8.5v2a2 2 0 000 4v2a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 16.5v-2a2 2 0 000-4v-2z" />
+    <path d="M14 7v10" strokeDasharray="2 2.5" />
+  </>,
+);
+const iconoMovimientos = svg(
+  <>
+    <path d="M4 8h12M13 5l3 3-3 3" />
+    <path d="M20 16H8M11 13l-3 3 3 3" />
+  </>,
+);
+const iconoCaja = svg(
+  <>
+    <rect x="3.5" y="6.5" width="17" height="11" rx="2" />
+    <circle cx="12" cy="12" r="2.4" />
+  </>,
+);
+
+// `corta` es la etiqueta de la barra inferior del celular, donde no cabe mas.
+// `barra: false` queda fuera de esa barra: son cinco destinos, no seis, para
+// que cada uno siga siendo comodo con el pulgar.
 const links = [
-  { href: '/', label: 'Porteria' },
-  { href: '/clientes', label: 'Clientes y vehiculos' },
-  { href: '/planes', label: 'Planes' },
-  { href: '/movimientos', label: 'Movimientos' },
-  { href: '/caja', label: 'Caja' },
+  { href: '/', label: 'Tablero', corta: 'Tablero', barra: true, icon: iconoTablero },
+  { href: '/porteria', label: 'Porteria', corta: 'Porteria', barra: true, icon: iconoPorteria },
+  { href: '/clientes', label: 'Clientes y vehiculos', corta: 'Clientes', barra: true, icon: iconoClientes },
+  { href: '/planes', label: 'Planes', corta: 'Planes', barra: false, icon: iconoPlanes },
+  { href: '/movimientos', label: 'Movimientos', corta: 'Movim.', barra: true, icon: iconoMovimientos },
+  { href: '/caja', label: 'Caja', corta: 'Caja', barra: true, icon: iconoCaja },
 ];
 
 type State =
@@ -74,12 +124,14 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const ruta = usePathname();
+  const activo = (href: string) => (href === '/' ? ruta === '/' : ruta.startsWith(href));
 
   const check = useCallback(async () => {
     try {
       setState({ kind: 'in', user: await api.get<SessionUser>('/auth/me') });
     } catch (e) {
-      setState({ kind: e instanceof OfflineError ? 'offline' : 'out' });
+      setState({ kind: apiCaida(e) ? 'offline' : 'out' });
     }
   }, []);
 
@@ -201,10 +253,17 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   return (
     <>
       <header className="topbar">
-        <span className="brand">ParkControl Pro</span>
+        <Link className="brand" href="/">
+          ParkControl <span>Pro</span>
+        </Link>
         <nav className="nav">
           {links.map((l) => (
-            <Link key={l.href} href={l.href}>
+            <Link
+              key={l.href}
+              href={l.href}
+              className={activo(l.href) ? 'activo' : undefined}
+              aria-current={activo(l.href) ? 'page' : undefined}
+            >
               {l.label}
             </Link>
           ))}
@@ -229,6 +288,23 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           {children}
         </SessionContext.Provider>
       </main>
+
+      {/* Barra inferior del celular: al alcance del pulgar, no arriba. */}
+      <nav className="barra-inferior">
+        {links
+          .filter((l) => l.barra)
+          .map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={activo(l.href) ? 'activo' : undefined}
+              aria-current={activo(l.href) ? 'page' : undefined}
+            >
+              <span className="barra-icono">{l.icon}</span>
+              {l.corta}
+            </Link>
+          ))}
+      </nav>
     </>
   );
 }

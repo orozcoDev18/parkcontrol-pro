@@ -72,6 +72,35 @@ export type LookupResult = {
   vehicles: Vehicle[];
 };
 
+export type PuntoSerie = {
+  fecha: string;
+  salidas: number;
+  parqueo: number;
+  planes: number;
+  total: number;
+};
+
+export type Overview = {
+  ahora: string;
+  adentro: {
+    total: number;
+    conPlan: number;
+    vehiculos: {
+      id: string;
+      plate: string;
+      type: VehicleType;
+      cliente: string;
+      entryAt: string;
+      coveredByPlan: boolean;
+    }[];
+  };
+  hoy: PuntoSerie;
+  metodos: Record<string, number>;
+  totales: { clientes: number; vehiculos: number; planesVigentes: number };
+  serie: PuntoSerie[];
+  ultimos: Movement[];
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -132,12 +161,20 @@ export const api = {
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
 };
 
+/**
+ * La API no esta: o no hay red, o el puente /api respondio un error de servidor
+ * porque no encontro a quien reenviar.
+ */
+export function apiCaida(error: unknown) {
+  return error instanceof OfflineError || (error instanceof ApiError && error.status >= 500);
+}
+
 /** Lectura con datos de prueba cuando la API aun no esta levantada. */
 export async function getOrDemo<T>(path: string, demo: T): Promise<{ data: T; demo: boolean }> {
   try {
     return { data: await request<T>(path), demo: false };
   } catch (error) {
-    if (error instanceof OfflineError) return { data: demo, demo: true };
+    if (apiCaida(error)) return { data: demo, demo: true };
     throw error;
   }
 }
@@ -234,3 +271,46 @@ export const DEMO = {
     byPaymentMethod: {} as Record<string, { count: number; total: number }>,
   },
 };
+
+// Modo demo: numeros plausibles, para que la pantalla se entienda sin base de datos.
+const diaDemo = (resta: number) =>
+  new Date(Date.now() - resta * 86400000).toISOString().slice(0, 10);
+
+const SERIE_DEMO = [38000, 61000, 52000, 74000, 95000, 120000, 86000];
+
+export const DEMO_OVERVIEW = {
+  ahora: new Date().toISOString(),
+  adentro: {
+    total: 2,
+    conPlan: 1,
+    vehiculos: [
+      {
+        id: 'd1',
+        plate: 'ABC123',
+        type: 'CAR' as VehicleType,
+        cliente: 'Jose Orozco (demo)',
+        entryAt: new Date(Date.now() - 95 * 60000).toISOString(),
+        coveredByPlan: true,
+      },
+      {
+        id: 'd2',
+        plate: 'XYZ45D',
+        type: 'MOTORCYCLE' as VehicleType,
+        cliente: 'Laura Mejia (demo)',
+        entryAt: new Date(Date.now() - 24 * 60000).toISOString(),
+        coveredByPlan: false,
+      },
+    ],
+  },
+  hoy: { fecha: diaDemo(0), salidas: 14, parqueo: 86000, planes: 0, total: 86000 },
+  metodos: { EFECTIVO: 62000, TARJETA: 24000 },
+  totales: { clientes: 1, vehiculos: 2, planesVigentes: 1 },
+  serie: SERIE_DEMO.map((total, i) => ({
+    fecha: diaDemo(6 - i),
+    salidas: Math.round(total / 6000),
+    parqueo: total,
+    planes: 0,
+    total,
+  })),
+  ultimos: [] as Movement[],
+} as Overview;
