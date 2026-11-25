@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run db:generate --workspace apps/api && npm run build --workspace apps/api",
+  "installCommand": "npm install",
+  "outputDirectory": "apps/api/dist",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "apps/api/dist/**",
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+}

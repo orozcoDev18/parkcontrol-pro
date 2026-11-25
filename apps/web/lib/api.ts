@@ -1,4 +1,5 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+// Mismo dominio que la web: next.config.mjs reenvia /api a la API de verdad.
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 export type VehicleType = 'CAR' | 'MOTORCYCLE' | 'OTHER';
 

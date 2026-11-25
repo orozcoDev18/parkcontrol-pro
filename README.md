@@ -142,6 +142,39 @@ cuerpo de `POST /auth/users`.
 `/` Portería · `/clientes` Clientes y vehículos · `/planes` Planes · `/movimientos` Movimientos ·
 `/caja` Caja.
 
+## En producción (Vercel)
+
+- Web: https://parkcontrol-web.vercel.app
+- API: https://parkcontrol-api.vercel.app (base de datos en Supabase)
+
+Son **dos proyectos de Vercel** sobre este mismo repo:
+
+| Proyecto | Carpeta raíz | Qué despliega | Variables |
+| --- | --- | --- | --- |
+| `parkcontrol-api` | la raíz del repo | `api/index.js`, que entrega las peticiones a Nest ya compilado | `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `CORS_ORIGIN` |
+| `parkcontrol-web` | `apps/web` | el Next.js | `API_ORIGIN` |
+
+La web **no llama a la API por su dominio**: la sirve ella misma bajo `/api` con un rewrite de
+Next hacia `API_ORIGIN`. Así la cookie de sesión es del mismo sitio que la página, en vez de una
+cookie de terceros — que Safari bloquea, y ahí se cae el login en iPhone. Por eso la cookie puede
+ser `SameSite=Lax`, que además impide que viaje en peticiones hechas desde otros sitios.
+
+Dos detalles que hacen falta para que Nest funcione como función:
+
+- `api/index.js` es JavaScript y usa `apps/api/dist`, porque el compilador rápido de Vercel no emite
+  los metadatos de tipos que Nest necesita para inyectar dependencias. El `buildCommand` de
+  `vercel.json` corre `prisma generate` y `nest build` antes.
+- `schema.prisma` declara el binario `rhel-openssl-3.0.x`; sin él Prisma no conecta en Vercel.
+
+Volver a desplegar, desde la raíz (API) y desde `apps/web` (web):
+
+```powershell
+npx vercel deploy --prod
+```
+
+El primer golpe tras un rato de inactividad tarda ~1 s porque la función arranca en frío; las
+siguientes van en ~300 ms.
+
 ## Publicar en GitHub (`orozcoDev18`)
 
 Con GitHub CLI:

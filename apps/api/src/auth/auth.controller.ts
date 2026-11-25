@@ -31,9 +31,9 @@ export class AuthController {
     const { user, token } = await this.auth.login(dto.email, dto.password);
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      sameSite: isProd ? 'none' : 'lax',
-      // shortcut: en produccion la API y la web deben ir por HTTPS y, si estan en
-      // dominios distintos, hay que fijar `domain`; revisar al desplegar.
+      // 'lax' porque la web sirve la API bajo su propio /api: la cookie es del
+      // mismo sitio que la pagina y asi no viaja en peticiones de otros sitios.
+      sameSite: 'lax',
       secure: isProd,
       maxAge: SESSION_HOURS * 3600 * 1000,
       path: '/',
